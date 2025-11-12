@@ -130,6 +130,8 @@
             transform: translateY(20px);
             transition: all 0.5s ease;
             max-width: 500px;
+            position: relative;
+            z-index: 20;
         }
 
         .result-container.show {
@@ -203,6 +205,9 @@
             }
             .spin-text {
                 font-size: 14px;
+            }
+            .result-text {
+                font-size: 1.2rem;
             }
         }
 
@@ -295,12 +300,14 @@
         let isSpinning = false;
         let spinCount = 0;
         let spinHistory = {};
+        let isMobile = window.innerWidth <= 480;
 
         // Set canvas size
         function setCanvasSize() {
             const container = document.querySelector('.wheel-container');
             canvas.width = container.offsetWidth;
             canvas.height = container.offsetHeight;
+            isMobile = window.innerWidth <= 480;
         }
 
         // Draw the wheel
@@ -337,10 +344,20 @@
                 ctx.rotate(startAngle + anglePerSegment / 2);
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#fff';
-                ctx.font = 'bold 13px Arial';
+                
+                // Adjust font size based on device
+                if (isMobile) {
+                    ctx.font = 'bold 10px Arial';
+                } else {
+                    ctx.font = 'bold 13px Arial';
+                }
+                
                 ctx.shadowColor = 'rgba(0,0,0,0.3)';
                 ctx.shadowBlur = 3;
-                ctx.fillText(option.text, radius * 0.65, 5);
+                
+                // Adjust text position to stay within segment
+                const textRadius = radius * 0.65;
+                ctx.fillText(option.text, textRadius, 5);
                 ctx.restore();
             });
 
@@ -374,12 +391,21 @@
                 if (progress < 1) {
                     requestAnimationFrame(animate);
                 } else {
-                    // Determine winner
+                    // FIXED: Correct winner calculation
+                    // The pointer is at the top (12 o'clock position = -π/2 radians)
+                    // We need to find which segment is at this position
                     const normalizedRotation = currentRotation % (Math.PI * 2);
-                    const adjustedRotation = (Math.PI * 2 - normalizedRotation + Math.PI / 2) % (Math.PI * 2);
+                    
+                    // Calculate the angle at the pointer position (top of wheel)
+                    // Since the wheel rotates clockwise, we need to account for this
+                    const pointerAngle = (-Math.PI / 2 - normalizedRotation + Math.PI * 2) % (Math.PI * 2);
+                    
                     const segmentAngle = (Math.PI * 2) / foodOptions.length;
-                    const winnerIndex = Math.floor(adjustedRotation / segmentAngle) % foodOptions.length;
+                    const winnerIndex = Math.floor(pointerAngle / segmentAngle) % foodOptions.length;
                     const winner = foodOptions[winnerIndex];
+
+                    // Debug logging (can be removed in production)
+                    console.log('Winner:', winner.text, 'Index:', winnerIndex);
 
                     // Update stats
                     spinCount++;
