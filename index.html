@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What to Eat Today - Tamil Nadu Food Spinner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        h1 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 20px auto;
+            animation: fadeIn 1s ease;
+        }
+
+        #wheelCanvas {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 10px 30px rgba(0,0,0,0.3));
+            transition: transform 0.3s ease;
+        }
+
+        #wheelCanvas:hover {
+            transform: scale(1.02);
+        }
+
+        .pointer {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-top: 50px solid #FF1744;
+            filter: drop-shadow(0 3px 5px rgba(0,0,0,0.3));
+            z-index: 10;
+            animation: bounce 2s infinite;
+        }
+
+        .center-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #FF1744, #F44336);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+            z-index: 5;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 4px solid white;
+        }
+
+        .center-circle:hover {
+            transform: translate(-50%, -50%) scale(1.15);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+
+        .center-circle:active {
+            transform: translate(-50%, -50%) scale(0.95);
+        }
+
+        .center-circle.spinning {
+            animation: pulse 0.5s ease-in-out infinite;
+        }
+
+        .spin-text {
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .result-container {
+            margin-top: 40px;
+            padding: 25px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+            max-width: 500px;
+        }
+
+        .result-container.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result-text {
+            font-size: 1.5rem;
+            color: #333;
+            text-align: center;
+        }
+
+        .result-emoji {
+            font-size: 2rem;
+            margin-right: 10px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            color: white;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        @media (max-width: 480px) {
+            h1 { font-size: 2rem; }
+            .wheel-container {
+                width: 320px;
+                height: 320px;
+            }
+            .center-circle {
+                width: 80px;
+                height: 80px;
+            }
+            .spin-text {
+                font-size: 14px;
+            }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #FF1744;
+            position: absolute;
+            animation: confetti-fall 3s linear;
+            z-index: 1000;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .instructions {
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🍛 Tamil Nadu Food Spinner</h1>
+        <p class="subtitle">Discover authentic Tamil cuisine today!</p>
+    </header>
+
+    <main>
+        <div class="wheel-container">
+            <div class="pointer"></div>
+            <canvas id="wheelCanvas"></canvas>
+            <div class="center-circle" id="centerCircle" onclick="spinWheel()">
+                <span class="spin-text">SPIN<br>WHEEL</span>
+            </div>
+        </div>
+
+        <p class="instructions">Click the center button to spin!</p>
+
+        <div class="result-container" id="resultContainer">
+            <div class="result-text" id="resultText"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <strong>Spins Today:</strong> <span id="spinCount">0</span>
+            </div>
+            <div class="stat-card">
+                <strong>Favorite:</strong> <span id="favorite">-</span>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const centerCircle = document.getElementById('centerCircle');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultText = document.getElementById('resultText');
+        const spinCountElement = document.getElementById('spinCount');
+        const favoriteElement = document.getElementById('favorite');
+
+        // Tamil Nadu food options with emojis
+        const foodOptions = [
+            { text: '🥞 Idli', color: '#FF6B35' },
+            { text: '🍘 Dosa', color: '#F7931E' },
+            { text: '🍚 Sambar Rice', color: '#FFB74D' },
+            { text: '🥛 Curd Rice', color: '#FFCC80' },
+            { text: '🍗 Chettinad Chicken', color: '#FF8A65' },
+            { text: '🍛 Biryani', color: '#FF7043' },
+            { text: '🍯 Pongal', color: '#FFAB91' },
+            { text: '🍩 Vadai', color: '#FFD180' },
+            { text: '🍲 Rasam', color: '#FF9E80' },
+            { text: '🥬 Kootu', color: '#FFCCBC' },
+            { text: '🫓 Parotta', color: '#FFAB00' },
+            { text: '🍜 Kothu Parotta', color: '#FFB300' },
+            { text: '☕ Filter Coffee', color: '#FFC107' },
+            { text: '🍮 Payasam', color: '#FFD54F' },
+            { text: '🌶️ Milagu Kozhambu', color: '#FFECB3' },
+            { text: '🥞 Appam', color: '#FFF176' }
+        ];
+
+        let currentRotation = 0;
+        let isSpinning = false;
+        let spinCount = 0;
+        let spinHistory = {};
+
+        // Set canvas size
+        function setCanvasSize() {
+            const container = document.querySelector('.wheel-container');
+            canvas.width = container.offsetWidth;
+            canvas.height = container.offsetHeight;
+        }
+
+        // Draw the wheel
+        function drawWheel(rotation = 0) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(centerX, centerY) - 10;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(rotation);
+
+            const anglePerSegment = (Math.PI * 2) / foodOptions.length;
+
+            foodOptions.forEach((option, index) => {
+                const startAngle = index * anglePerSegment;
+                const endAngle = (index + 1) * anglePerSegment;
+
+                // Draw segment
+                ctx.beginPath();
+                ctx.arc(0, 0, radius, startAngle, endAngle);
+                ctx.lineTo(0, 0);
+                ctx.fillStyle = option.color;
+                ctx.fill();
+
+                // Draw border
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Draw text
+                ctx.save();
+                ctx.rotate(startAngle + anglePerSegment / 2);
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 13px Arial';
+                ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                ctx.shadowBlur = 3;
+                ctx.fillText(option.text, radius * 0.65, 5);
+                ctx.restore();
+            });
+
+            ctx.restore();
+        }
+
+        // Spin the wheel
+        function spinWheel() {
+            if (isSpinning) return;
+
+            isSpinning = true;
+            centerCircle.classList.add('spinning');
+            resultContainer.classList.remove('show');
+
+            const spinDuration = 3000 + Math.random() * 2000;
+            const totalRotation = (Math.PI * 2 * (5 + Math.random() * 5));
+            const startTime = Date.now();
+            const startRotation = currentRotation;
+
+            function animate() {
+                const now = Date.now();
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / spinDuration, 1);
+
+                // Easing function for realistic deceleration
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                currentRotation = startRotation + totalRotation * easeOut;
+
+                drawWheel(currentRotation);
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    // Determine winner
+                    const normalizedRotation = currentRotation % (Math.PI * 2);
+                    const adjustedRotation = (Math.PI * 2 - normalizedRotation + Math.PI / 2) % (Math.PI * 2);
+                    const segmentAngle = (Math.PI * 2) / foodOptions.length;
+                    const winnerIndex = Math.floor(adjustedRotation / segmentAngle) % foodOptions.length;
+                    const winner = foodOptions[winnerIndex];
+
+                    // Update stats
+                    spinCount++;
+                    spinCountElement.textContent = spinCount;
+                    spinHistory[winner.text] = (spinHistory[winner.text] || 0) + 1;
+                    
+                    // Update favorite
+                    const favorite = Object.keys(spinHistory).reduce((a, b) => 
+                        spinHistory[a] > spinHistory[b] ? a : b
+                    );
+                    favoriteElement.textContent = favorite;
+
+                    // Show result
+                    setTimeout(() => {
+                        resultText.innerHTML = `<span class="result-emoji">🎉</span> Today's meal: <strong>${winner.text}</strong>`;
+                        resultContainer.classList.add('show');
+                        createConfetti();
+                    }, 500);
+
+                    isSpinning = false;
+                    centerCircle.classList.remove('spinning');
+                }
+            }
+
+            animate();
+        }
+
+        // Create confetti effect
+        function createConfetti() {
+            const colors = ['#FF6B35', '#F7931E', '#FFB74D', '#FF8A65', '#FF7043'];
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    document.body.appendChild(confetti);
+                    setTimeout(() => confetti.remove(), 3000);
+                }, i * 50);
+            }
+        }
+
+        // Initialize
+        setCanvasSize();
+        drawWheel();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            setCanvasSize();
+            drawWheel(currentRotation);
+        });
+    </script>
+</body>
+</html>
