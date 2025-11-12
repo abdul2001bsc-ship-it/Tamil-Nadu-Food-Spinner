@@ -149,4 +149,3 @@ This project is open source and available under the [MIT License](LICENSE).
 
 *Spin the wheel and discover your next favorite Tamil dish!* 🎉# Tamil-Nadu-Food-Spinner
 # Tamil-Nadu-Food-Spinner
-# Tamil-Nadu-Food-Spinner
